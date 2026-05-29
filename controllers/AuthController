@@ -1,0 +1,81 @@
+<?php
+class AuthController {
+    private $authModel;
+    private $kamarModel;
+
+    public function __construct($authModel, $kamarModel) {
+        $this->authModel = $authModel;
+        $this->kamarModel = $kamarModel;
+    }
+
+    public function handleLogin() {
+        if (isset($_SESSION['login'])) {
+            $this->redirectUser($_SESSION['role']);
+        }
+
+        $error = "";
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $username = $_POST['username'];
+            $password = $_POST['password'];
+
+            $user = $this->authModel->login($username);
+            if ($user && password_verify($password, $user['password'])) {
+                $_SESSION['login'] = true;
+                $_SESSION['id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['nama'] = $user['nama'];
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['hp'] = $user['hp'];
+                $_SESSION['role'] = $user['role'];
+                $_SESSION['kamar'] = $user['kamar'];
+                $_SESSION['terakhir_aktif'] = time();
+
+                $this->redirectUser($user['role']);
+            }
+            $error = "Username atau password salah!";
+        }
+        include 'views/login.php';
+    }
+
+    public function handleRegister() {
+        if (isset($_SESSION['login'])) {
+            $this->redirectUser($_SESSION['role']);
+        }
+
+        $error = "";
+        $sukses = "";
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $username = $_POST['username'];
+            $password = $_POST['password'];
+            $nama     = $_POST['nama'];
+            $email    = $_POST['email'];
+            $hp       = $_POST['hp'];
+            $kamar    = $_POST['kamar'];
+
+            if ($this->authModel->cekUsername($username)) {
+                $error = "Username sudah digunakan, silakan pilih yang lain!";
+            } else {
+                if ($this->authModel->register($username, $password, $nama, $email, $hp, $kamar)) {
+                    $this->kamarModel->updateStatus($kamar, 'terisi');
+                    $sukses = "Pendaftaran berhasil! Silakan masuk.";
+                } else {
+                    $error = "Gagal melakukan pendaftaran sistem.";
+                }
+            }
+        }
+
+        $kamar_tersedia = $this->kamarModel->getKamarTersedia();
+        include 'views/register.php';
+    }
+
+    private function redirectUser($role) {
+        if ($role == 'admin') {
+            header("Location: index.php?page=admin");
+        } else {
+            header("Location: index.php?page=user");
+        }
+        exit();
+    }
+}
+?>
