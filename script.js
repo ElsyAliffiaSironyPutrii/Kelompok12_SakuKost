@@ -1,26 +1,28 @@
-function checkRole() {
-    const role = document.getElementById('role').value;
-    const regLink = document.getElementById('reg-link');
-    if(regLink) {
-        regLink.style.display = (role === 'user') ? 'block' : 'none';
-    }
-}
+document.addEventListener("DOMContentLoaded", function() {
+    const btnAcc = document.querySelectorAll('.btn-acc');
+    btnAcc.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Setujui pembayaran ini?')) {
+                e.preventDefault();
+            }
+        });
+    });
 
-function login() {
-    const role = document.getElementById('role').value;
-    if(role === 'admin') {
-        window.location.href = 'admin.html';
-    } else {
-        window.location.href = 'user.html';
-    }
-}
+    const btnDeny = document.querySelectorAll('.btn-deny');
+    btnDeny.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Tolak pembayaran ini?')) {
+                e.preventDefault();
+            }
+        });
+    });
 
-function logout() {
-    window.location.href = 'index.html';
-}
-
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-    const target = document.getElementById(pageId);
-    if(target) target.style.display = 'block';
-}
+    const btnDeleteReport = document.querySelectorAll('.btn-delete-report');
+    btnDeleteReport.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Selesaikan & hapus laporan ini?')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
