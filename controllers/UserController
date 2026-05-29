@@ -1,0 +1,101 @@
+<?php
+class UserController {
+    private $authModel;
+    private $kamarModel;
+    private $pembayaranModel;
+    private $laporanModel;
+
+    public function __construct($authModel, $kamarModel, $pembayaranModel, $laporanModel) {
+        $this->authModel = $authModel;
+        $this->kamarModel = $kamarModel;
+        $this->pembayaranModel = $pembayaranModel;
+        $this->laporanModel = $laporanModel;
+    }
+
+    public function checkSession() {
+        if (!isset($_SESSION['login']) || $_SESSION['role'] != 'user') {
+            header("Location: index.php");
+            exit();
+        }
+        if (isset($_SESSION['terakhir_aktif']) && (time() - $_SESSION['terakhir_aktif'] > 900)) {
+            session_unset();
+            session_destroy();
+            header("Location: index.php?pesan=timeout");
+            exit();
+        }
+        $_SESSION['terakhir_aktif'] = time();
+    }
+
+    public function index() {
+        $this->checkSession();
+        $user_id = $_SESSION['id'];
+        $hal_aktif = isset($_GET['hal']) ? $_GET['hal'] : 'dashboard';
+        $pesan_aksi = "";
+        $laporan_edit = null;
+
+        if (isset($_GET['aksi']) && isset($_GET['id'])) {
+            $aksi = $_GET['aksi'];
+            $id   = (int)$_GET['id'];
+
+            if ($aksi == 'hapus_laporan') {
+                $this->laporanModel->hapusLaporan($id);
+                header("Location: index.php?page=user&hal=laporan");
+                exit();
+            } elseif ($aksi == 'edit_laporan') {
+                $laporan_edit = $this->laporanModel->getLaporanById($id);
+                $hal_aktif = 'laporan';
+            }
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if (isset($_POST['kirim_pembayaran'])) {
+                $bulan   = $_POST['bulan'];
+                $jumlah  = (int)$_POST['jumlah'];
+                $catatan = $_POST['catatan'];
+                $this->pembayaranModel->tambahPembayaran($user_id, $bulan, $jumlah, $catatan);
+                $pesan_aksi = "✅ Bukti pembayaran berhasil dikirim!";
+                $hal_aktif = 'pembayaran';
+            }
+
+            if (isset($_POST['kirim_laporan'])) {
+                $fasilitas = $_POST['fasilitas'];
+                $lokasi    = $_POST['lokasi'];
+                $deskripsi = $_POST['deskripsi'];
+                $this->laporanModel->tambahLaporan($user_id, $fasilitas, $lokasi, $deskripsi);
+                $pesan_aksi = "✅ Laporan kerusakan berhasil dikirim!";
+                $hal_aktif = 'laporan';
+            }
+
+            if (isset($_POST['ubah_laporan'])) {
+                $id_laporan = (int)$_POST['id_laporan'];
+                $fasilitas  = $_POST['fasilitas'];
+                $lokasi     = $_POST['lokasi'];
+                $deskripsi  = $_POST['deskripsi'];
+                $this->laporanModel->ubahLaporanUser($id_laporan, $fasilitas, $lokasi, $deskripsi);
+                header("Location: index.php?page=user&hal=laporan");
+                exit();
+            }
+
+            if (isset($_POST['simpan_profil'])) {
+                $nama  = $_POST['nama'];
+                $email = $_POST['email'];
+                $hp    = $_POST['hp'];
+                $this->authModel->updateProfil($user_id, $nama, $email, $hp);
+                $_SESSION['nama']  = $nama;
+                $_SESSION['email'] = $email;
+                $_SESSION['hp']    = $hp;
+                $pesan_aksi = "✅ Profil Anda berhasil diperbarui!";
+                $hal_aktif = 'profil';
+            }
+        }
+
+        $user_info = $this->authModel->getUserById($user_id);
+        $_SESSION['kamar'] = $user_info['kamar'];
+        $kamar_info = $this->kamarModel->getKamarByNo($_SESSION['kamar']);
+        $riwayat_pembayaran = $this->pembayaranModel->getRiwayatUser($user_id);
+        $riwayat_laporan = $this->laporanModel->getRiwayatUser($user_id);
+
+        include 'views/user.php';
+    }
+}
+?>
