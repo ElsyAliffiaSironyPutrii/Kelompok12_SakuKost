@@ -15,7 +15,7 @@ class AuthController {
 
         $error = "";
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $username = $_POST['username'];
+            $username = trim($_POST['username']);
             $password = $_POST['password'];
 
             $user = $this->authModel->login($username);
@@ -46,12 +46,26 @@ class AuthController {
         $sukses = "";
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $username = $_POST['username'];
+            $username = trim($_POST['username']);
             $password = $_POST['password'];
-            $nama     = $_POST['nama'];
-            $email    = $_POST['email'];
-            $hp       = $_POST['hp'];
+            $nama     = trim($_POST['nama']);
+            $email    = trim($_POST['email']);
+            $hp       = trim($_POST['hp']);
             $kamar    = $_POST['kamar'];
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !str_ends_with($email, '@gmail.com')) {
+                $error = "Format email harus menggunakan @gmail.com!";
+                $kamar_tersedia = $this->kamarModel->getKamarTersedia();
+                include 'views/register.php';
+                return;
+            }
+
+            if (strlen($password) < 8) {
+                $error = "Password minimal harus 8 karakter!";
+                $kamar_tersedia = $this->kamarModel->getKamarTersedia();
+                include 'views/register.php';
+                return;
+            }
 
             if ($this->authModel->cekUsername($username)) {
                 $error = "Username sudah digunakan, silakan pilih yang lain!";
