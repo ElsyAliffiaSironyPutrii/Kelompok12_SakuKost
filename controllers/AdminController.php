@@ -17,7 +17,7 @@ class AdminController {
             header("Location: index.php");
             exit();
         }
-        if (isset($_SESSION['terakhir_aktif']) && (time() - $_SESSION['terakhir_aktif'] > 900)) {
+        if (isset($_SESSION['terakhir_aktif']) && (time() - $_SESSION['terakhir_aktif'] > 200)) {
             session_unset();
             session_destroy();
             header("Location: index.php?pesan=timeout");
@@ -110,6 +110,7 @@ class AdminController {
         $keyword = isset($_POST['keyword']) ? $_POST['keyword'] : "";
         $data_penghuni   = $this->authModel->getPenghuni($keyword);
         $data_pembayaran = $this->pembayaranModel->getPembayaranMenunggu();
+        $data_pembayaran_history = $this->pembayaranModel->getPembayaranHistory();
         $data_laporan    = $this->laporanModel->getAllLaporan();
 
         include 'views/admin.php';
